@@ -27,8 +27,7 @@ autoinstall:
         uri: http://ports.ubuntu.com/ubuntu-ports
   storage:
     layout:
-      name: lvm
-      password: "Jackson-LUKS-2026!"
+      name: direct
 
   packages:
     # GNOME desktop layer
