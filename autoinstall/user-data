@@ -5,7 +5,7 @@ autoinstall:
   keyboard:
     layout: us
   timezone: Europe/Istanbul
- identity:
+  identity:
     hostname: jx-workstation
     username: jackson
     password: "$6$1dX3QHnwb2e.6G3z$F7m75nwLaeQjVyFzMAxL9GFv8i6eRLPmf10SxtbqydDQiR.BpBp15TGg1//465p/wuc6IfQFQueSMLycpzL151"
