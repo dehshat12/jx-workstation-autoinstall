@@ -1,0 +1,25 @@
+#!/bin/sh
+set -e
+
+case "${1:-}" in
+    configure)
+        if command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+            systemctl enable jx-sentinel.service jx-sentinel-guard.service || true
+        fi
+
+        chown root:root /opt/jx/etc/jx-sentinel/jx-sentinel.conf /opt/jx/etc/jx-sentinel/guard.conf 2>/dev/null || true
+        chmod 0644 /opt/jx/etc/jx-sentinel/jx-sentinel.conf /opt/jx/etc/jx-sentinel/guard.conf 2>/dev/null || true
+
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database /usr/share/applications || true
+        fi
+
+        if [ -x /opt/jx/bin/jx-apply-branding ] && [ -f /opt/jx/share/icons/jx-logo.png ]; then
+            /opt/jx/bin/jx-apply-branding || true
+        fi
+        ;;
+esac
+
+exit 0
+

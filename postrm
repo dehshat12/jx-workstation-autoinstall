@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+case "${1:-}" in
+    purge)
+        if [ -x /opt/jx/bin/jx-restore-ubuntu-branding ]; then
+            /opt/jx/bin/jx-restore-ubuntu-branding || true
+        fi
+        rm -rf /opt/jx/var/backups/jx-branding
+        ;;
+esac
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl daemon-reload || true
+fi
+
+exit 0
+

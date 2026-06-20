@@ -1,0 +1,213 @@
+#cloud-config
+autoinstall:
+  version: 1
+  locale: en_US.UTF-8
+  keyboard:
+    layout: us
+  timezone: Europe/Istanbul
+ identity:
+    hostname: jx-workstation
+    username: jackson
+    password: "$6$1dX3QHnwb2e.6G3z$F7m75nwLaeQjVyFzMAxL9GFv8i6eRLPmf10SxtbqydDQiR.BpBp15TGg1//465p/wuc6IfQFQueSMLycpzL151"
+
+  user-data:
+    chpasswd:
+      expire: true
+      users:
+        - name: jackson
+          password: "ChangeMe-2026!"
+          type: text
+  ssh:
+    install-server: true
+    allow-pw: true
+  apt:
+    preserve_sources_list: false
+    primary:
+      - arches: [arm64]
+        uri: http://ports.ubuntu.com/ubuntu-ports
+  storage:
+    layout:
+      name: direct
+  packages:
+    # GNOME desktop layer
+    - ubuntu-desktop-minimal
+    - gdm3
+    - gnome-shell
+    - gnome-control-center
+    - gnome-terminal
+    - nautilus
+    - file-roller
+    - gnome-text-editor
+    - eog
+    - gnome-tweaks
+    - gnome-shell-extension-appindicator
+
+    # System/security baseline
+    - ufw
+    - unattended-upgrades
+    - apt-listchanges
+    - apparmor
+    - apparmor-utils
+    - apparmor-profiles
+    - apparmor-profiles-extra
+    - auditd
+    - audispd-plugins
+    - fail2ban
+    - lynis
+
+    # Admin/dev tools
+    - curl
+    - wget
+    - git
+    - btop
+    - tree
+    - net-tools
+    - dnsutils
+    - whois
+    - tcpdump
+    - nmap
+    - build-essential
+    - ca-certificates
+    - gnupg
+    - lsb-release
+
+    # Storage/recovery
+    - cryptsetup
+    - btrfs-progs
+    - timeshift
+    - rsync
+    - restic
+    - ubuntu-desktop
+    - build-essential
+    - curl
+    - ca-certificates
+    - dconf-cli
+    - plymouth
+    - gdm3
+    - yaru-theme-icon
+    - zenity
+    - libnotify-bin
+    - libgtk-4-1
+    - libwebkitgtk-6.0-4
+    - libjavascriptcoregtk-6.0-1
+  late-commands:
+    - curtin in-target --target=/target -- mkdir -p /opt/jx/bootstrap
+    - |
+      curtin in-target --target=/target -- /bin/sh -c '
+        set -eu
+        JX_DEB_URL="https://raw.githubusercontent.com/dehshat12/jx-os-installer/refs/heads/main/repo/pool/main/j/jx-workstation/jx-workstation_0.1.0_arm64.deb"
+        curl -fL "$JX_DEB_URL" -o /opt/jx/bootstrap/jx-workstation.deb
+        apt-get update
+        apt-get install -y /opt/jx/bootstrap/jx-workstation.deb
+        systemctl enable jx-sentinel.service jx-sentinel-guard.service
+      '
+    # Set graphical boot target.
+    - curtin in-target --target=/target -- systemctl set-default graphical.target
+
+    # Enable GNOME display manager.
+    - curtin in-target --target=/target -- systemctl enable gdm3
+
+    # Firewall baseline.
+    - curtin in-target --target=/target -- ufw default deny incoming
+    - curtin in-target --target=/target -- ufw default allow outgoing
+    - curtin in-target --target=/target -- ufw --force enable
+
+    # SSH disabled by default.
+    - curtin in-target --target=/target -- systemctl disable ssh || true
+
+    # Security services.
+    - curtin in-target --target=/target -- systemctl enable apparmor
+    - curtin in-target --target=/target -- systemctl enable auditd
+    - curtin in-target --target=/target -- systemctl enable unattended-upgrades
+    - curtin in-target --target=/target -- systemctl enable fail2ban
+
+    # Disable workstation services unless explicitly needed.
+    - curtin in-target --target=/target -- systemctl disable avahi-daemon || true
+    - curtin in-target --target=/target -- systemctl disable cups || true
+    - curtin in-target --target=/target -- systemctl disable bluetooth || true
+
+    # Safety: make sure the main user account is not locked.
+    # Password expiration is handled by user-data chpasswd above.
+    - curtin in-target --target=/target -- usermod -U jackson || true
+    - curtin in-target --target=/target -- passwd -u jackson || true
+
+    # Kernel/network hardening.
+    - |
+      cat > /target/etc/sysctl.d/99-jx-hardening.conf <<'EOF'
+      kernel.kptr_restrict = 2
+      kernel.dmesg_restrict = 1
+      kernel.unprivileged_bpf_disabled = 1
+
+      net.ipv4.conf.all.rp_filter = 1
+      net.ipv4.conf.default.rp_filter = 1
+      net.ipv4.tcp_syncookies = 1
+      net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+      net.ipv4.conf.all.accept_redirects = 0
+      net.ipv4.conf.default.accept_redirects = 0
+      net.ipv6.conf.all.accept_redirects = 0
+      net.ipv6.conf.default.accept_redirects = 0
+
+      net.ipv4.conf.all.send_redirects = 0
+      net.ipv4.conf.default.send_redirects = 0
+      EOF
+
+    # JX identity marker.
+    - |
+      cat > /target/etc/os-release.jx <<'EOF'
+      NAME="JX/OS Workstation ARM64"
+      BASE="Ubuntu 24.04 LTS"
+      ARCH="arm64"
+      DESKTOP="GNOME"
+      PROFILE="Hardened Ubuntu ARM64 Workstation"
+      EOF
+
+    # GNOME dconf profile.
+    - curtin in-target --target=/target -- mkdir -p /etc/dconf/profile /etc/dconf/db/local.d
+
+    - |
+      cat > /target/etc/dconf/profile/user <<'EOF'
+      user-db:user
+      system-db:local
+      EOF
+
+    # GNOME visual defaults.
+    - |
+      cat > /target/etc/dconf/db/local.d/10-jx-gnome-defaults <<'EOF'
+      [org/gnome/desktop/interface]
+      color-scheme='prefer-dark'
+      clock-show-weekday=true
+
+      [org/gnome/desktop/peripherals/touchpad]
+      tap-to-click=true
+
+      [org/gnome/shell]
+      favorite-apps=['firefox_firefox.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Terminal.desktop']
+
+      [org/gnome/desktop/background]
+      show-desktop-icons=false
+      EOF
+
+    # GNOME app-folder sorting.
+    - |
+      cat > /target/etc/dconf/db/local.d/20-jx-app-folders <<'EOF'
+      [org/gnome/desktop/app-folders]
+      folder-children=['Miscellaneous', 'JXOSWorkstationTools']
+
+      [org/gnome/desktop/app-folders/folders/JXWorkstationTools]
+      name='JX/OS Workstation Tools'
+      apps=['lynis.desktop', 'org.jx.sentinel.control.desktop', 'org.gnome.SystemMonitor.desktop', 'timeshift-gtk.desktop', 'btop.desktop']
+
+      [org/gnome/desktop/app-folders/folders/Miscellaneous]
+      name='Miscellaneous'
+      apps=['nm-connection-editor.desktop', 'gnome-language-selector.desktop', 'gnome-power-statistics.desktop', 'software-properties-drivers.desktop', 'software-properties-gtk.desktop', 'org.gnome.clocks.desktop', 'org.gnome.FileRoller.desktop', 'org.gnome.Characters.desktop', 'gnome-language-selector.desktop', 'gnome-power-statistics.desktop', 'org.gnome.DiskUtility.desktop', 'org.gnome.seahorse.Application.desktop', 'org.gnome.tweaks.desktop', 'org.gnome.font-viewer.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Logs.desktop', 'org.gnome.baobab.desktop', 'org.gnome.PowerStats.desktop']
+      EOF
+
+    # Apply dconf defaults.
+    - curtin in-target --target=/target -- dconf update
+
+    # Keep sysctl active.
+    - curtin in-target --target=/target -- systemctl enable systemd-sysctl
+
+    # Cleanup.
+    - curtin in-target --target=/target -- apt autoremove --purge -y

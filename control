@@ -1,0 +1,11 @@
+Package: jx-workstation
+Version: 0.1.0
+Section: admin
+Priority: optional
+Architecture: arm64
+Maintainer: JX <jx@jx.local>
+Depends: libc6, systemd, pkexec, zenity, libnotify-bin, imagemagick, dconf-cli, desktop-file-utils, gtk-update-icon-cache, plymouth, gdm3, yaru-theme-icon, libgtk-4-1, libwebkitgtk-6.0-4, libjavascriptcoregtk-6.0-1, libglib2.0-0
+Description: JX Workstation branding, Sentinel, Guard, and Control Panel
+ Installs the JX Workstation system branding and the JX Sentinel file
+ monitor, Guard permission enforcer, user permission agent, and Control Panel.
+
