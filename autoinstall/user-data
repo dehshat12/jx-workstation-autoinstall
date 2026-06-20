@@ -18,16 +18,21 @@ autoinstall:
           password: "ChangeMe-2026!"
           type: text
   ssh:
-    install-server: true
-    allow-pw: true
+    install-server: false
+
+  updates: security
   apt:
     preserve_sources_list: false
     primary:
       - arches: [arm64]
         uri: http://ports.ubuntu.com/ubuntu-ports
+      - arches: [default]
+        uri: http://ports.ubuntu.com/ubuntu-ports
   storage:
     layout:
-      name: direct
+      name: lvm
+      password: "Jackson-LUKS-2026!"
+
   packages:
     # GNOME desktop layer
     - ubuntu-desktop-minimal
