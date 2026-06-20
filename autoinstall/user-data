@@ -13,10 +13,7 @@ autoinstall:
   user-data:
     chpasswd:
       expire: true
-      users:
-        - name: jackson
-          password: "ChangeMe-2026!"
-          type: text
+
   ssh:
     install-server: false
 
@@ -82,7 +79,6 @@ autoinstall:
     - timeshift
     - rsync
     - restic
-    - ubuntu-desktop
     - build-essential
     - curl
     - ca-certificates
@@ -104,7 +100,8 @@ autoinstall:
         curl -fL "$JX_DEB_URL" -o /opt/jx/bootstrap/jx-workstation.deb
         apt-get update
         apt-get install -y /opt/jx/bootstrap/jx-workstation.deb
-        systemctl enable jx-sentinel.service jx-sentinel-guard.service
+        systemctl enable jx-sentinel.service || true
+        systemctl enable jx-sentinel-guard.service || true
       '
     # Set graphical boot target.
     - curtin in-target --target=/target -- systemctl set-default graphical.target
@@ -198,6 +195,9 @@ autoinstall:
       cat > /target/etc/dconf/db/local.d/20-jx-app-folders <<'EOF'
       [org/gnome/desktop/app-folders]
       folder-children=['Miscellaneous', 'JXOSWorkstationTools']
+
+      [org/gnome/desktop/app-folders]
+      folder-children=['Miscellaneous', 'JXWorkstationTools']
 
       [org/gnome/desktop/app-folders/folders/JXWorkstationTools]
       name='JX/OS Workstation Tools'
