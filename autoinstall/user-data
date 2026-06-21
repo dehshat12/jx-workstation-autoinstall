@@ -1,18 +1,14 @@
 #cloud-config
 autoinstall:
   version: 1
+
+  interactive-sections:
+    - identity
+
   locale: en_US.UTF-8
   keyboard:
     layout: us
   timezone: Europe/Istanbul
-  identity:
-    hostname: jx-workstation
-    username: jackson
-    password: "$6$1dX3QHnwb2e.6G3z$F7m75nwLaeQjVyFzMAxL9GFv8i6eRLPmf10SxtbqydDQiR.BpBp15TGg1//465p/wuc6IfQFQueSMLycpzL151"
-
-  user-data:
-    chpasswd:
-      expire: true
 
   ssh:
     install-server: false
